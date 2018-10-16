@@ -1,0 +1,57 @@
+
+#
+# this is the one line of the script you should need to change. It will prefix resource names 
+# with your prefix so that names are globally unique when necessary
+# 
+# generally 3-4 characters like your initials will suffice
+#
+$project_name="<my project prefix>"
+
+#
+# setting up script variables
+#
+$location="westus"
+$resource_group=$project_name+"lab"
+$computer_vision_account=$project_name+"cv"
+$storage_account=$project_name+"storage"
+$cosmosdb_account=$project_name+"db"
+$vm=$project_name+"dsvm"
+$vm_admin="aiguru"
+$vm_password="pass@word1234"
+
+#
+# create resource group
+#
+az group create --name $resource_group --location $location
+
+#
+# create computer vision endpoint
+#
+az cognitiveservices account create --kind ComputerVision --location $location --resource-group $resource_group --name $computer_vision_account --sku S1 --yes
+
+#
+# create storage account
+#
+az storage account create --name $storage_account --location $location --resource-group $resource_group 
+
+#
+# creat cosmos db instance
+#
+az cosmosdb create --name $cosmosdb_account --resource-group $resource_group --locations "$location=0" --kind GlobalDocumentDB 
+
+#
+# create data science VM
+#
+az vm create --name $vm --resource-group $resource_group --image "microsoft-ads:windows-data-science-vm:windows2016:18.06.05" --location "eastus2" --size "Standard_DS4_v2" --admin-username $vm_admin --admin-password $vm_password 
+
+$storage_key = $(az storage account keys list --resource-group $resource_group --account-name $storage_account --query "[0].value")
+$storage_connection_string = $(az storage account show-connection-string -g $resource_group -n $storage_account --query "connectionString")
+$vision_key = $(az cognitiveservices account keys list --name $computer_vision_account --resource-group $resource_group --query "key1")
+$cosmosdb_key = $(az cosmosdb list-keys --name $cosmosdb_account --resource-group $resource_group --query "primaryMasterKey")
+$cosmosdb_endpoint = $(az cosmosdb show --name $cosmosdb_account --resource-group $resource_group --query "documentEndpoint")
+
+
+
+# this line prints out the keys that you will need for subsequent modules
+# copy the output and save in a local text file
+echo "--------------------------------------------";echo "---- begin copy block ----------------------";echo "--------------------------------------------";echo "";echo "storageKey = $storage_key" ; echo "storage connection string = $storage_connection_string" ; echo "vision key = $vision_key" ; echo "cosmosdb key = $cosmosdb_key" ; echo "cosmosdb endpoint = $cosmosdb_endpoint";echo "";echo "--------------------------------------------";echo "---- end copy block ------------------------";echo "--------------------------------------------";
